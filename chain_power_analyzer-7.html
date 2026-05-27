@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chain Power Analyzer v3</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080c10;
+  --surface: #0e1520;
+  --sur2:    #141d2a;
+  --sur3:    #1b2637;
+  --border:  #243044;
+  --brd2:    #1a2540;
+  --text:    #d8e8f8;
+  --muted:   #6a87a8;
+  --faint:   #3a5268;
+  --accent:  #38b2ff;
+  --green:   #2ddb88;
+  --orange:  #f5a623;
+  --red:     #f05050;
+  --purple:  #9d7cf8;
+  --teal:    #18d4c0;
+  --yellow:  #f8c845;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:0;font-size:13px;line-height:1.5}
+.wrap{width:100%;padding:20px 20px 40px}
+
+/* HEADER */
+header{display:flex;align-items:flex-end;justify-content:space-between;padding:0 0 16px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.hL h1{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--accent);letter-spacing:-.3px;line-height:1}
+.hL h1 span{color:var(--faint);font-weight:400}
+.hL p{margin-top:5px;font-size:11px;color:var(--muted);font-weight:300}
+.hR{font-family:var(--mono);font-size:10px;color:var(--faint);text-align:right;line-height:1.8}
+
+/* GRID */
+.main-grid{display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start}
+
+/* PANEL */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.ptitle{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.ptitle .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* INPUTS */
+.isec{margin-bottom:13px}
+.islbl{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--brd2)}
+.irow{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:8px}
+.irow label{color:var(--muted);font-size:11.5px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.irow .ctrl{display:flex;align-items:center;gap:5px;flex-shrink:0}
+input[type=number]{width:76px;background:var(--sur2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:4px 7px;font-family:var(--mono);font-size:12px;text-align:right;outline:none;transition:border-color .12s,background .12s;-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:0;transition:opacity .15s}
+input[type=number]:hover::-webkit-inner-spin-button,input[type=number]:hover::-webkit-outer-spin-button{opacity:.5}
+input[type=number]:focus::-webkit-inner-spin-button,input[type=number]:focus::-webkit-outer-spin-button{opacity:.7}
+input[type=number]:focus{border-color:var(--accent);background:var(--sur3)}
+select{background:var(--sur2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:4px 8px;font-family:var(--sans);font-size:12px;outline:none;cursor:pointer;transition:border-color .12s}
+select:focus{border-color:var(--accent)}
+.unit{font-family:var(--mono);font-size:9px;color:var(--faint);width:30px;flex-shrink:0}
+.dtag{font-family:var(--mono);font-size:9px;background:rgba(56,178,255,.10);border:1px solid rgba(56,178,255,.25);border-radius:3px;padding:1px 5px;white-space:nowrap;color:var(--accent)}
+.dtag.or{color:var(--orange);background:rgba(245,166,35,.10);border-color:rgba(245,166,35,.25)}
+.dtag.gr{color:var(--green);background:rgba(45,219,136,.08);border-color:rgba(45,219,136,.25)}
+
+/* SPROCKETS */
+#sprocket_inputs{margin-top:6px}
+.prow{display:flex;align-items:center;gap:6px;margin-bottom:5px;padding:5px 8px;background:var(--sur2);border:1px solid var(--brd2);border-radius:5px}
+.pidx{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--purple);width:18px;flex-shrink:0}
+.prow label{color:var(--muted);font-size:11px;flex:1}
+.prow .ctrl{display:flex;align-items:center;gap:4px}
+
+/* WARNINGS */
+#warnings{margin-bottom:12px}
+.wbox{border-radius:6px;padding:6px 10px;font-size:11px;margin-bottom:4px;display:flex;align-items:flex-start;gap:7px}
+.wbox.warn {background:rgba(248,200,69,.08);border:1px solid rgba(248,200,69,.25);color:var(--yellow)}
+.wbox.error{background:rgba(240,80,80,.08);border:1px solid rgba(240,80,80,.25);color:var(--red)}
+.wbox.ok   {background:rgba(45,219,136,.07);border:1px solid rgba(45,219,136,.2);color:var(--green)}
+.wicon{font-size:13px;flex-shrink:0;margin-top:-1px}
+
+/* DUAL POWER CARDS */
+.dual-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.pcard{border-radius:10px;padding:14px 16px 12px;position:relative;overflow:hidden;border:1px solid var(--border)}
+.pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.pcard.steady{background:var(--sur2)}
+.pcard.steady::before{background:linear-gradient(90deg,var(--accent),var(--teal))}
+.pcard.startup{background:var(--sur2)}
+.pcard.startup::before{background:linear-gradient(90deg,var(--orange),var(--red))}
+.pcard.dimcase{border-color:var(--green)!important}
+.pcard.dimcase::before{background:linear-gradient(90deg,var(--green),var(--accent))!important}
+.pc-label{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.pc-badge{font-size:8px;background:rgba(45,219,136,.15);border:1px solid rgba(45,219,136,.3);border-radius:10px;padding:1px 6px;color:var(--green);white-space:nowrap}
+.pc-badge.hidden{display:none}
+.pc-val{font-family:var(--mono);font-size:32px;font-weight:700;line-height:1;letter-spacing:-1.5px;margin-bottom:2px}
+.pc-unit{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.pc-sub{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.7}
+.pc-sub span{color:var(--text);font-weight:500}
+
+/* DIMENSIONING BANNER */
+.dim-banner{background:rgba(45,219,136,.08);border:1px solid rgba(45,219,136,.3);border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.dim-left{font-size:11px;color:var(--muted)}
+.dim-left strong{color:var(--green)}
+.dim-right{display:flex;align-items:center;gap:10px}
+.dim-kw{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--green);letter-spacing:-1px}
+.dim-iec{font-family:var(--mono);font-size:10px;background:rgba(56,178,255,.12);border:1px solid rgba(56,178,255,.3);border-radius:20px;padding:3px 12px;color:var(--accent)}
+
+/* PIE + LEGEND */
+.pie-row{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+#pieChart{flex-shrink:0}
+.legend{flex:1;min-width:0}
+.litem{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:11px}
+.ldot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.lname{color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lpct{font-family:var(--mono);font-size:11px;font-weight:600;width:40px;text-align:right;flex-shrink:0}
+
+/* BREAKDOWN TABLE */
+.btable{width:100%;border-collapse:collapse;margin-bottom:14px}
+.btable thead tr{border-bottom:1px solid var(--border)}
+.btable th{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);padding:4px 6px;text-align:left;font-weight:600}
+.btable th.r{text-align:right}
+.btable td{padding:4px 6px;vertical-align:middle}
+.btable td.r{text-align:right;font-family:var(--mono);font-size:11.5px}
+.btable td.pct{text-align:right;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.btable tbody tr:hover td{background:rgba(255,255,255,.015)}
+.bar-cell{width:28%}
+.bar-bg{background:var(--brd2);border-radius:3px;height:5px;overflow:hidden}
+.bar-fg{height:100%;border-radius:3px;transition:width .35s cubic-bezier(.4,0,.2,1)}
+.sep-row td{border-top:1px solid var(--border);padding-top:7px}
+.total-row td{font-weight:600}
+.final-row td{color:var(--green);font-weight:700;font-family:var(--mono)}
+.acc-row td{color:var(--orange);font-weight:700;font-family:var(--mono)}
+.zero-row td{opacity:.35}
+
+/* SPROCKET TABLE */
+.stbl-wrap{margin-bottom:14px}
+.stbl-title{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.stbl{width:100%;border-collapse:collapse}
+.stbl th{font-family:var(--mono);font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--faint);padding:3px 6px;text-align:right;border-bottom:1px solid var(--brd2)}
+.stbl th:first-child{text-align:left}
+.stbl td{font-family:var(--mono);font-size:11px;padding:3px 6px;text-align:right}
+.stbl td:first-child{text-align:left;color:var(--purple);font-weight:600}
+.stbl tr:hover td{background:rgba(255,255,255,.015)}
+
+/* KV GRID */
+.kv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.kvc{background:var(--sur2);border:1px solid var(--brd2);border-radius:7px;padding:8px 10px}
+.kvl{font-size:9px;color:var(--faint);margin-bottom:2px}
+.kvv{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
+.kvu{font-family:var(--mono);font-size:9px;color:var(--muted)}
+
+/* ETA BAR */
+.eta-wrap{margin-bottom:14px}
+.eta-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.eta-lbl{font-size:10px;color:var(--muted)}
+.eta-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)}
+.eta-bg{background:var(--sur3);border-radius:4px;height:8px;overflow:hidden}
+.eta-fg{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red),var(--orange),var(--green));transition:width .4s}
+
+/* FORMULA REF */
+.fref{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.fref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.fcard{background:var(--sur2);border:1px solid var(--brd2);border-radius:7px;padding:10px 12px;border-left:2px solid}
+.fcard-name{font-size:10px;color:var(--muted);margin-bottom:5px}
+.fcard-eq{font-family:var(--mono);font-size:11px;line-height:1.7}
+.fcard-note{margin-top:4px;font-size:9px;color:var(--faint);line-height:1.5}
+
+/* SEPARATOR RULE */
+.section-sep{border:none;border-top:1px solid var(--brd2);margin:10px 0}
+
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}.kv-grid{grid-template-columns:repeat(2,1fr)}.fref-grid{grid-template-columns:repeat(2,1fr)}.dual-cards{grid-template-columns:1fr}}
+@media(max-width:500px){.kv-grid{grid-template-columns:repeat(2,1fr)}.fref-grid{grid-template-columns:1fr}.pc-val{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="hL">
+    <h1>⚙ Chain Power Analyzer <span>/ v3.0</span></h1>
+    <p>Bilancio energetico — regime stazionario + avviamento · catena a rulli ISO · guide HDPE · palette · prodotto</p>
+  </div>
+  <div class="hR">
+    Regime stazionario · Avviamento (rampa)<br>
+    Inerzia traslazionale + rotazionale<br>
+    Caso dimensionante automatico
+  </div>
+</header>
+
+<div class="main-grid">
+
+  <!-- ══════ LEFT: INPUTS ══════════════════════════ -->
+  <div class="panel">
+    <div class="ptitle"><div class="dot" style="background:var(--accent)"></div>Parametri di Input</div>
+
+    <!-- CATENA -->
+    <div class="isec">
+      <div class="islbl">Geometria Catena</div>
+      <div class="irow">
+        <label>Passo catena</label>
+        <div class="ctrl">
+          <input type="number" id="pitch" value="0.5" step="0.125" min="0.1" max="3">
+          <span class="unit">poll.</span>
+          <span class="dtag" id="pitch_mm">12.7 mm</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CINEMATICA -->
+    <div class="isec">
+      <div class="islbl">Cinematica</div>
+      <div class="irow">
+        <label>Velocità catena a regime</label>
+        <div class="ctrl">
+          <input type="number" id="v" value="30" step="1" min="0.1" max="600">
+          <span class="unit">m/min</span>
+          <span class="dtag" id="v_ms_tag">0.500 m/s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIGNONI -->
+    <div class="isec">
+      <div class="islbl">Pignoni di Rinvio</div>
+      <div class="irow">
+        <label>Numero pignoni</label>
+        <div class="ctrl">
+          <select id="n_pign_sel" onchange="updateSprocketInputs()">
+            <option value="1">1 pignone</option>
+            <option value="2">2 pignoni</option>
+            <option value="3" selected>3 pignoni</option>
+            <option value="4">4 pignoni</option>
+          </select>
+        </div>
+      </div>
+      <div id="sprocket_inputs"></div>
+    </div>
+
+    <!-- CATENA & GUIDA -->
+    <div class="isec">
+      <div class="islbl">Catena &amp; Guida</div>
+      <div class="irow">
+        <label>Massa lineare catena</label>
+        <div class="ctrl">
+          <input type="number" id="m_lin" value="1.2" step="0.1" min="0.05" max="50">
+          <span class="unit">kg/m</span>
+        </div>
+      </div>
+      <div class="irow">
+        <label>Sviluppo totale catena</label>
+        <div class="ctrl">
+          <input type="number" id="L_total" value="6" step="0.5" min="0.1" max="200">
+          <span class="unit">m</span>
+        </div>
+      </div>
+      <div class="irow">
+        <label>Lunghezza guida catena</label>
+        <div class="ctrl">
+          <input type="number" id="L_guide" value="4" step="0.5" min="0" max="200">
+          <span class="unit">m</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PALETTE -->
+    <div class="isec">
+      <div class="islbl">Palette &amp; Ganci</div>
+      <div class="irow">
+        <label>Massa singola paletta + gancio</label>
+        <div class="ctrl">
+          <input type="number" id="m_pallet" value="0.5" step="0.05" min="0" max="100">
+          <span class="unit">kg</span>
+        </div>
+      </div>
+      <div class="irow">
+        <label>Passo palette (ogni N maglie)</label>
+        <div class="ctrl">
+          <input type="number" id="passo_mag" value="10" step="1" min="1" max="200">
+          <span class="unit">mag.</span>
+          <span class="dtag or" id="n_pal_tag">n=?</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODOTTO -->
+    <div class="isec">
+      <div class="islbl">Prodotto su Piano</div>
+      <div class="irow">
+        <label>Massa totale prodotto sul piano</label>
+        <div class="ctrl">
+          <input type="number" id="m_prod" value="50" step="5" min="0" max="10000">
+          <span class="unit">kg</span>
+        </div>
+      </div>
+      <div class="irow">
+        <label>μ prodotto / piano</label>
+        <div class="ctrl">
+          <input type="number" id="mu_prod" value="0.30" step="0.01" min="0.01" max="1.0">
+          <span class="unit">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTRITO -->
+    <div class="isec">
+      <div class="islbl">Attrito Catena</div>
+      <div class="irow">
+        <label title="HDPE secco 0.15–0.30">μ catena / guida HDPE</label>
+        <div class="ctrl">
+          <input type="number" id="mu_guide" value="0.20" step="0.01" min="0.05" max="0.80">
+          <span class="unit">—</span>
+        </div>
+      </div>
+      <div class="irow">
+        <label title="Lubrificato 0.05–0.12 · Secco 0.15–0.30">μ perno / bronzina</label>
+        <div class="ctrl">
+          <input type="number" id="mu_pin" value="0.10" step="0.01" min="0.01" max="0.50">
+          <span class="unit">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AVVIAMENTO -->
+    <div class="isec">
+      <div class="islbl" style="color:var(--orange)">Avviamento</div>
+      <div class="irow">
+        <label>Tempo rampa 0 → v<sub>nom</sub></label>
+        <div class="ctrl">
+          <input type="number" id="t_acc" value="5" step="0.5" min="0.1" max="120">
+          <span class="unit">s</span>
+          <span class="dtag or" id="a_tag">— m/s²</span>
+        </div>
+      </div>
+      <div class="irow">
+        <label title="Approssimazione disco pieno: m_eq = m_pign / 2">Massa equiv. pignoni (Σ m/2)</label>
+        <div class="ctrl">
+          <input type="number" id="m_pign_eq" value="0" step="0.1" min="0" max="500">
+          <span class="unit">kg</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SICUREZZA -->
+    <div class="isec">
+      <div class="islbl">Sicurezza</div>
+      <div class="irow">
+        <label>Coefficiente di sicurezza k<sub>s</sub></label>
+        <div class="ctrl">
+          <input type="number" id="k_s" value="1.5" step="0.1" min="1.0" max="5.0">
+          <span class="unit">—</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /left -->
+
+  <!-- ══════ RIGHT: RESULTS ════════════════════════ -->
+  <div class="panel">
+    <div class="ptitle"><div class="dot" style="background:var(--green)"></div>Bilancio Energetico</div>
+
+    <div id="warnings"></div>
+
+    <!-- DUAL POWER CARDS -->
+    <div class="dual-cards">
+      <div class="pcard steady" id="card_steady">
+        <div class="pc-label">
+          Regime stazionario
+          <span class="pc-badge hidden" id="badge_steady">★ DIMENSIONANTE</span>
+        </div>
+        <div class="pc-val" id="pc_steady_kw" style="color:var(--accent)">—</div>
+        <div class="pc-unit">kW</div>
+        <div class="pc-sub">
+          P<sub>mecc</sub> = <span id="pc_s_mech">—</span> W<br>
+          × k<sub>s</sub> <span id="pc_s_ks">—</span> = <span id="pc_s_w">—</span> W
+        </div>
+      </div>
+      <div class="pcard startup" id="card_startup">
+        <div class="pc-label">
+          Avviamento — picco fine rampa
+          <span class="pc-badge hidden" id="badge_start">★ DIMENSIONANTE</span>
+        </div>
+        <div class="pc-val" id="pc_start_kw" style="color:var(--orange)">—</div>
+        <div class="pc-unit">kW</div>
+        <div class="pc-sub">
+          P<sub>mecc</sub> + P<sub>acc</sub> = <span id="pc_a_sum">—</span> W<br>
+          a = <span id="pc_a_a">—</span> m/s² · F<sub>acc</sub> = <span id="pc_a_F">—</span> N<br>
+          P<sub>acc</sub> = <span id="pc_a_Pacc">—</span> W · × k<sub>s</sub> = <span id="pc_a_w">—</span> W
+        </div>
+      </div>
+    </div>
+
+    <!-- DIMENSIONING BANNER -->
+    <div class="dim-banner">
+      <div class="dim-left">
+        Caso dimensionante: <strong id="dim_case">—</strong>
+      </div>
+      <div class="dim-right">
+        <div class="dim-kw" id="dim_kw">— kW</div>
+        <div class="dim-iec" id="dim_iec">— IEC</div>
+      </div>
+    </div>
+
+    <!-- PIE CHART (regime stazionario) -->
+    <div class="pie-row">
+      <canvas id="pieChart" width="130" height="130"></canvas>
+      <div class="legend" id="pie-legend"></div>
+    </div>
+
+    <!-- BREAKDOWN TABLE -->
+    <table class="btable">
+      <thead>
+        <tr>
+          <th>Componente</th>
+          <th class="r">W</th>
+          <th class="r">% su P<sub>mecc</sub></th>
+          <th class="bar-cell"></th>
+        </tr>
+      </thead>
+      <tbody id="btbody"></tbody>
+    </table>
+
+    <!-- SPROCKET TABLE -->
+    <div class="stbl-wrap">
+      <div class="stbl-title">Dettaglio pignoni</div>
+      <table class="stbl">
+        <thead>
+          <tr>
+            <th>Pign.</th><th>R [mm]</th><th>z</th><th>k<sub>p</sub></th>
+            <th>λ [×10⁻³]</th><th>ω [r/s]</th><th>rpm</th>
+            <th>P<sub>p</sub> [W]</th><th>P<sub>i</sub> [W]</th>
+          </tr>
+        </thead>
+        <tbody id="stbody"></tbody>
+      </table>
+    </div>
+
+    <!-- EFFICIENCY BAR -->
+    <div class="eta-wrap">
+      <div class="eta-hd">
+        <span class="eta-lbl">Efficienza η = P<sub>prodotto</sub> / P<sub>mecc</sub></span>
+        <span class="eta-val" id="eta_disp">—</span>
+      </div>
+      <div class="eta-bg"><div class="eta-fg" id="eta_bar" style="width:0%"></div></div>
+    </div>
+
+    <!-- KEY VALUES -->
+    <div class="kv-grid">
+      <div class="kvc"><div class="kvl">Palette sul circuito</div><div class="kvv" id="kv_np">—</div><div class="kvu">pz</div></div>
+      <div class="kvc"><div class="kvl">Massa tot. palette</div><div class="kvv" id="kv_mp">—</div><div class="kvu">kg</div></div>
+      <div class="kvc"><div class="kvl">m<sub>lin,eq</sub></div><div class="kvv" id="kv_mleq">—</div><div class="kvu">kg/m</div></div>
+      <div class="kvc"><div class="kvl">Massa inerziale tot.</div><div class="kvv" id="kv_minz">—</div><div class="kvu">kg</div></div>
+      <div class="kvc"><div class="kvl">Forza inerzia F<sub>acc</sub></div><div class="kvv" id="kv_Facc">—</div><div class="kvu">N</div></div>
+      <div class="kvc"><div class="kvl">Accelerazione a</div><div class="kvv" id="kv_a">—</div><div class="kvu">m/s²</div></div>
+      <div class="kvc"><div class="kvl">Tensione centrifuga</div><div class="kvv" id="kv_Fcf">—</div><div class="kvu">N</div></div>
+      <div class="kvc"><div class="kvl">Tensione lavoro T<sub>w</sub></div><div class="kvv" id="kv_Tw">—</div><div class="kvu">N</div></div>
+      <div class="kvc"><div class="kvl">Energia cinetica E<sub>k</sub></div><div class="kvv" id="kv_Ek">—</div><div class="kvu">J</div></div>
+    </div>
+
+  </div><!-- /right -->
+</div><!-- /main-grid -->
+
+<!-- FORMULA REFERENCE -->
+<div class="fref">
+  <div class="ptitle"><div class="dot" style="background:var(--purple)"></div>Modello Fisico — Riferimento Formule</div>
+  <div class="fref-grid">
+
+    <div class="fcard" style="border-left-color:var(--teal)">
+      <div class="fcard-name">① Trasporto prodotto</div>
+      <div class="fcard-eq" style="color:var(--teal)">P<sub>pr</sub> = μ<sub>pr</sub> · m<sub>pr</sub> · g · v</div>
+      <div class="fcard-note">F<sub>prod</sub> entra anche in T<sub>w</sub> come forza che la catena deve vincere.</div>
+    </div>
+
+    <div class="fcard" style="border-left-color:var(--accent)">
+      <div class="fcard-name">② Attrito guida HDPE</div>
+      <div class="fcard-eq" style="color:var(--accent)">P<sub>g</sub> = μ<sub>g</sub> · m<sub>lin,eq</sub> · g · L<sub>g</sub> · v</div>
+      <div class="fcard-note">m<sub>lin,eq</sub> = m<sub>lin</sub> + m<sub>pal,tot</sub>/L<sub>tot</sub></div>
+    </div>
+
+    <div class="fcard" style="border-left-color:var(--purple)">
+      <div class="fcard-name">③ Articolazione pignoni</div>
+      <div class="fcard-eq" style="color:var(--purple)">P<sub>p</sub> = Σ<sub>i</sub> λ<sub>i</sub> · T<sub>w</sub> · v</div>
+      <div class="fcard-note">λ<sub>i</sub> = μ<sub>p</sub>·p/(π·R<sub>i</sub>) · T<sub>w</sub> = F<sub>pr</sub>+F<sub>cf</sub>+F<sub>g</sub>/2</div>
+    </div>
+
+    <div class="fcard" style="border-left-color:var(--orange)">
+      <div class="fcard-name">④ Inerzia / poligono (regime)</div>
+      <div class="fcard-eq" style="color:var(--orange)">P<sub>i</sub> = Σ<sub>i</sub> m<sub>eq</sub>·L·v³·δ<sub>i</sub>²/(2p)</div>
+      <div class="fcard-note">δ<sub>i</sub> = 1/cos(π/z<sub>i</sub>)−1 per ogni pignone.</div>
+    </div>
+
+    <div class="fcard" style="border-left-color:var(--red)">
+      <div class="fcard-name">⑤ Potenza di avviamento</div>
+      <div class="fcard-eq" style="color:var(--red)">P<sub>acc</sub> = m<sub>inz</sub> · v² / t<sub>acc</sub></div>
+      <div class="fcard-note">m<sub>inz</sub> = m<sub>lin,eq</sub>·L + m<sub>prod</sub> + m<sub>pign,eq</sub><br>Picco a fine rampa: v = v<sub>nom</sub>, a ancora attiva.</div>
+    </div>
+
+    <div class="fcard" style="border-left-color:var(--yellow)">
+      <div class="fcard-name">⑥ Caso dimensionante</div>
+      <div class="fcard-eq" style="color:var(--yellow)">P<sub>mot</sub> = max(P<sub>mecc</sub>, P<sub>avvio</sub>) · k<sub>s</sub></div>
+      <div class="fcard-note">P<sub>avvio</sub> = P<sub>mecc</sub> + P<sub>acc</sub> — somma a fine rampa quando v = v<sub>nom</sub>.</div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+const g = 9.81;
+const COMP = [
+  ['Trasporto prodotto',    '#18d4c0'],
+  ['Attrito guida HDPE',    '#38b2ff'],
+  ['Articolazione pignoni', '#9d7cf8'],
+  ['Inerzia / poligono',    '#f5a623'],
+];
+const IEC = [0.09,0.12,0.18,0.25,0.37,0.55,0.75,1.1,1.5,2.2,3.0,4.0,5.5,7.5,
+             11,15,18.5,22,30,37,45,55,75,90,110,132,160,200,250];
+const getIEC = kw => { const m=IEC.find(s=>s>=kw); return m?m+' kW':'>'+IEC[IEC.length-1]+' kW'; };
+const fmt  = (v,d=1) => isFinite(v)?v.toFixed(d):'—';
+const fmtW = w => { if(!isFinite(w))return'—'; if(Math.abs(w)>=10000)return(w/1000).toFixed(2)+'k'; return w.toFixed(1); };
+
+/* ── SPROCKET INPUTS ───────────────────────────── */
+function updateSprocketInputs() {
+  const n = parseInt(document.getElementById('n_pign_sel').value);
+  const old = [];
+  for(let i=1;i<=4;i++){const e=document.getElementById('R_'+i);old.push(e?e.value:(50+(i-1)*15));}
+  const c = document.getElementById('sprocket_inputs');
+  c.innerHTML = '';
+  for(let i=1;i<=n;i++){
+    const d=document.createElement('div');
+    d.className='prow';
+    d.innerHTML=`<span class="pidx">P${i}</span>
+      <label>Raggio primitivo R<sub>${i}</sub></label>
+      <div class="ctrl">
+        <input type="number" id="R_${i}" value="${old[i-1]||50+(i-1)*15}" step="1" min="10" max="500" oninput="calculate()">
+        <span class="unit">mm</span>
+        <span class="dtag" id="z_${i}">z=?</span>
+      </div>`;
+    c.appendChild(d);
+  }
+  calculate();
+}
+
+/* ── MAIN CALCULATION ──────────────────────────── */
+function calculate() {
+  // inputs
+  const p_inch   = Math.max(0.1, +document.getElementById('pitch').value    || 0.5);
+  const p_m      = p_inch * 0.0254;
+  const v_mmin   = Math.max(0.1, +document.getElementById('v').value        || 30);
+  const v        = v_mmin / 60;
+  const m_lin    = Math.max(0.05,+document.getElementById('m_lin').value    || 1.2);
+  const L_total  = Math.max(0.1, +document.getElementById('L_total').value  || 6);
+  const L_guide  = Math.max(0,   +document.getElementById('L_guide').value  || 4);
+  const m_pallet = Math.max(0,   +document.getElementById('m_pallet').value || 0);
+  const passo_mg = Math.max(1, Math.round(+document.getElementById('passo_mag').value || 10));
+  const m_prod   = Math.max(0,   +document.getElementById('m_prod').value   || 0);
+  const mu_prod  = Math.max(0.01,+document.getElementById('mu_prod').value  || 0.3);
+  const mu_guide = Math.max(0.01,+document.getElementById('mu_guide').value || 0.2);
+  const mu_pin   = Math.max(0.01,+document.getElementById('mu_pin').value   || 0.1);
+  const t_acc    = Math.max(0.1, +document.getElementById('t_acc').value    || 5);
+  const m_pign_eq= Math.max(0,   +document.getElementById('m_pign_eq').value|| 0);
+  const k_s      = Math.max(1,   +document.getElementById('k_s').value      || 1.5);
+  const n_pign   = parseInt(document.getElementById('n_pign_sel').value);
+
+  // inline tags
+  document.getElementById('pitch_mm').textContent  = (p_inch*25.4).toFixed(2)+' mm';
+  document.getElementById('v_ms_tag').textContent  = v.toFixed(4)+' m/s';
+
+  // pallets
+  const n_pal    = Math.floor(L_total / (passo_mg * p_m));
+  const m_pal_tot= n_pal * m_pallet;
+  const m_lin_eq = m_lin + (L_total>0 ? m_pal_tot/L_total : 0);
+  document.getElementById('n_pal_tag').textContent = 'n='+n_pal;
+
+  // kinematics
+  const F_cf     = m_lin_eq * v * v;
+  const E_kin    = 0.5 * m_lin_eq * L_total * v * v;
+
+  // product
+  const F_prod_N = mu_prod * m_prod * g;
+  const P_prod   = F_prod_N * v;
+
+  // guide
+  const F_guide  = mu_guide * m_lin_eq * g * L_guide;
+  const P_g      = F_guide * v;
+
+  // working tension
+  const T_w = F_prod_N + F_cf + 0.5 * F_guide;
+
+  // per-sprocket
+  let P_pign_tot=0, P_poly_tot=0;
+  const sprig=[];
+  for(let i=1;i<=n_pign;i++){
+    const R_mm = Math.max(10, +document.getElementById('R_'+i)?.value || 55);
+    const R_m  = R_mm/1000;
+    const z_i  = Math.max(6, Math.round(2*Math.PI*R_m/p_m));
+    const kp_i = 1/Math.cos(Math.PI/z_i);
+    const d_i  = kp_i-1;
+    const lam  = mu_pin*p_m/(Math.PI*R_m);
+    const om   = v/R_m;
+    const rpm  = om*60/(2*Math.PI);
+    const Pp_i = lam*T_w*v;
+    const Pi_i = m_lin_eq*L_total*Math.pow(v,3)*d_i*d_i/(2*p_m);
+    P_pign_tot+=Pp_i; P_poly_tot+=Pi_i;
+    const zt=document.getElementById('z_'+i); if(zt) zt.textContent='z='+z_i;
+    sprig.push({i,R_mm,z:z_i,kp:kp_i,lam,om,rpm,Pp:Pp_i,Pi:Pi_i});
+  }
+
+  // regime totals
+  const P_mech  = P_prod + P_g + P_pign_tot + P_poly_tot;
+  const P_mot_s = P_mech * k_s;
+
+  // AVVIAMENTO
+  const a          = v / t_acc;
+  const m_inz      = m_lin_eq*L_total + m_prod + m_pign_eq; // total inertial mass
+  const F_acc      = m_inz * a;
+  const P_acc      = F_acc * v;           // peak at end of ramp
+  const P_avvio    = P_mech + P_acc;      // total peak power
+  const P_mot_a    = P_avvio * k_s;
+  const is_start   = P_mot_a > P_mot_s;
+  const P_final    = Math.max(P_mot_s, P_mot_a);
+
+  document.getElementById('a_tag').textContent = a.toFixed(3)+' m/s²';
+
+  // efficiency
+  const eta = P_mech>0 ? (P_prod/P_mech*100) : 0;
+
+  // ── WARNINGS ────────────────────────────────
+  const worst_z  = sprig.reduce((mn,s)=>Math.min(mn,s.z),999);
+  const worst_kp = sprig.reduce((mx,s)=>Math.max(mx,s.kp),1);
+  const warns=[];
+  if(worst_z<9)
+    warns.push({l:'error',i:'🔴',m:`z=${worst_z} critico — effetto poligono estremo (k<sub>p</sub>=${worst_kp.toFixed(3)}).`});
+  else if(worst_z<13)
+    warns.push({l:'warn',i:'⚠',m:`z=${worst_z} — effetto poligono elevato (k<sub>p</sub>=${worst_kp.toFixed(3)}). Raccomandati z≥13.`});
+  else
+    warns.push({l:'ok',i:'✓',m:`z<sub>min</sub>=${worst_z} — effetto poligono contenuto (k<sub>p,max</sub>=${worst_kp.toFixed(4)}).`});
+  if(is_start)
+    warns.push({l:'warn',i:'⚡',m:`Avviamento dimensionante: P<sub>avvio</sub>=${(P_avvio/1000).toFixed(3)} kW > P<sub>mecc</sub>=${(P_mech/1000).toFixed(3)} kW. Valutare avviamento dolce (inverter/soft-starter).`});
+  if(F_cf>0.3*T_w&&v>1)
+    warns.push({l:'warn',i:'⚠',m:`Tensione centrifuga = ${(F_cf/T_w*100).toFixed(0)}% di T<sub>w</sub> — verificare portata catena.`});
+
+  document.getElementById('warnings').innerHTML=warns.map(w=>
+    `<div class="wbox ${w.l}"><span class="wicon">${w.i}</span><span>${w.m}</span></div>`
+  ).join('');
+
+  // ── DUAL CARDS ──────────────────────────────
+  const cs=document.getElementById('card_steady'), ca=document.getElementById('card_startup');
+  const bs=document.getElementById('badge_steady'), ba=document.getElementById('badge_start');
+  cs.classList.toggle('dimcase', !is_start);
+  ca.classList.toggle('dimcase',  is_start);
+  bs.classList.toggle('hidden',    is_start);
+  ba.classList.toggle('hidden',   !is_start);
+
+  document.getElementById('pc_steady_kw').textContent  = (P_mot_s/1000).toFixed(3);
+  document.getElementById('pc_s_mech').textContent     = P_mech.toFixed(1);
+  document.getElementById('pc_s_ks').textContent       = k_s.toFixed(1);
+  document.getElementById('pc_s_w').textContent        = P_mot_s.toFixed(1);
+
+  document.getElementById('pc_start_kw').textContent  = (P_mot_a/1000).toFixed(3);
+  document.getElementById('pc_a_sum').textContent     = P_avvio.toFixed(1);
+  document.getElementById('pc_a_a').textContent       = a.toFixed(3);
+  document.getElementById('pc_a_F').textContent       = F_acc.toFixed(1);
+  document.getElementById('pc_a_Pacc').textContent    = P_acc.toFixed(1);
+  document.getElementById('pc_a_w').textContent       = P_mot_a.toFixed(1);
+
+  // banner
+  document.getElementById('dim_case').textContent = is_start ? 'AVVIAMENTO' : 'REGIME STAZIONARIO';
+  document.getElementById('dim_kw').textContent   = (P_final/1000).toFixed(3)+' kW';
+  document.getElementById('dim_iec').textContent  = 'IEC → '+getIEC(P_final/1000);
+
+  // ── BREAKDOWN TABLE ──────────────────────────
+  const powers=[P_prod,P_g,P_pign_tot,P_poly_tot];
+  const tb=document.getElementById('btbody'); tb.innerHTML='';
+  powers.forEach((pw,i)=>{
+    const pct=P_mech>0?pw/P_mech*100:0;
+    const tr=document.createElement('tr');
+    if(pw<0.001) tr.className='zero-row';
+    tr.innerHTML=`
+      <td style="color:${COMP[i][1]};font-size:12px"><span style="font-size:9px">■</span> ${COMP[i][0]}</td>
+      <td class="r">${fmtW(pw)}</td>
+      <td class="pct">${pct.toFixed(1)}%</td>
+      <td class="bar-cell"><div class="bar-bg"><div class="bar-fg" style="width:${Math.min(100,pct).toFixed(1)}%;background:${COMP[i][1]}"></div></div></td>`;
+    tb.appendChild(tr);
+  });
+  const tSep=document.createElement('tr'); tSep.className='sep-row total-row';
+  tSep.innerHTML=`<td>Totale meccanica (regime)</td><td class="r" style="font-family:var(--mono)">${P_mech.toFixed(1)}</td><td class="pct">100%</td><td></td>`;
+  tb.appendChild(tSep);
+  const tAcc=document.createElement('tr'); tAcc.className='acc-row';
+  tAcc.innerHTML=`<td>+ Inerzia avviamento P<sub>acc</sub></td><td class="r">${P_acc.toFixed(1)}</td><td class="pct">${P_mech>0?(P_acc/P_mech*100).toFixed(0)+'%':''}</td><td class="bar-cell"><div class="bar-bg"><div class="bar-fg" style="width:${Math.min(100,P_mech>0?P_acc/P_mech*100:0).toFixed(1)}%;background:var(--orange)"></div></div></td>`;
+  tb.appendChild(tAcc);
+  const tFin=document.createElement('tr'); tFin.className='final-row';
+  tFin.innerHTML=`<td>→ P<sub>motore</sub> (caso dimensionante × k<sub>s</sub>)</td><td class="r">${P_final.toFixed(1)}</td><td class="r">${(P_final/1000).toFixed(3)} kW</td><td></td>`;
+  tb.appendChild(tFin);
+
+  // ── SPROCKET TABLE ───────────────────────────
+  const sb=document.getElementById('stbody'); sb.innerHTML='';
+  sprig.forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>P${s.i}</td><td>${s.R_mm.toFixed(0)}</td><td>${s.z}</td><td>${s.kp.toFixed(4)}</td><td>${(s.lam*1000).toFixed(3)}</td><td>${s.om.toFixed(2)}</td><td>${s.rpm.toFixed(1)}</td><td>${s.Pp.toFixed(2)}</td><td>${s.Pi.toFixed(2)}</td>`;
+    sb.appendChild(tr);
+  });
+
+  // ── ETA ─────────────────────────────────────
+  document.getElementById('eta_disp').textContent = P_prod>0&&P_mech>0?eta.toFixed(1)+' %':'n/a';
+  document.getElementById('eta_bar').style.width   = Math.min(100,eta).toFixed(1)+'%';
+
+  // ── KEY VALUES ───────────────────────────────
+  document.getElementById('kv_np').textContent    = n_pal;
+  document.getElementById('kv_mp').textContent    = m_pal_tot.toFixed(2);
+  document.getElementById('kv_mleq').textContent  = m_lin_eq.toFixed(3);
+  document.getElementById('kv_minz').textContent  = m_inz.toFixed(2);
+  document.getElementById('kv_Facc').textContent  = F_acc.toFixed(1);
+  document.getElementById('kv_a').textContent     = a.toFixed(4);
+  document.getElementById('kv_Fcf').textContent   = F_cf.toFixed(1);
+  document.getElementById('kv_Tw').textContent    = T_w.toFixed(1);
+  document.getElementById('kv_Ek').textContent    = E_kin.toFixed(2);
+
+  // ── PIE ─────────────────────────────────────
+  drawDonut(powers,P_mech); drawLegend(powers,P_mech);
+}
+
+function drawDonut(powers,total){
+  const cv=document.getElementById('pieChart'),ctx=cv.getContext('2d');
+  const cx=65,cy=65,R=55,r=28;
+  ctx.clearRect(0,0,130,130);
+  if(total<=0)return;
+  let a=-Math.PI/2;
+  powers.forEach((pw,i)=>{
+    if(pw<=0)return;
+    const end=a+pw/total*2*Math.PI;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a,end);ctx.closePath();
+    ctx.fillStyle=COMP[i][1];ctx.fill();a=end;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fillStyle='#0e1520';ctx.fill();
+  ctx.fillStyle='#3a5268';ctx.font='600 9px JetBrains Mono,monospace';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('REGIME',cx,cy-6);ctx.fillText('MIX',cx,cy+6);
+}
+
+function drawLegend(powers,total){
+  document.getElementById('pie-legend').innerHTML=powers.map((pw,i)=>{
+    const pct=total>0?(pw/total*100).toFixed(1):'0.0';
+    const op=pw<0.001?'opacity:.35;':'';
+    return`<div class="litem" style="${op}"><div class="ldot" style="background:${COMP[i][1]}"></div><span class="lname">${COMP[i][0]}</span><span class="lpct" style="color:${COMP[i][1]}">${pct}%</span></div>`;
+  }).join('');
+}
+
+document.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('input',calculate));
+updateSprocketInputs();
+</script>
+</body>
+</html>
